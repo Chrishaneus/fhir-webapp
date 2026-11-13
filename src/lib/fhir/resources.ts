@@ -57,6 +57,8 @@ const ref = (v: unknown): Cell => (v ? { reference: v as Reference } : '');
 const date = (v: unknown) => formatDate(v as string | undefined);
 const start = (v: unknown) => formatDate((v as Period | undefined)?.start);
 const text = (v: unknown) => (v === undefined || v === null ? '' : String(v));
+/** FHIR leaves `active` out when it's unknown; that isn't "yes". */
+const active = (v: unknown) => (v === true ? 'Yes' : v === false ? 'No' : '');
 
 const fromTo = (param: string, label: string): SearchField[] => [
 	{ key: 'from', param, label: `${label} from`, kind: 'date', prefix: 'ge' },
@@ -78,7 +80,7 @@ export const resourceTypes: ResourceType[] = [
 				label: 'Age',
 				value: (r) => text(ageFrom(f(r).birthDate as string | undefined) ?? '')
 			},
-			{ label: 'Active', value: (r) => (f(r).active === false ? 'No' : 'Yes') }
+			{ label: 'Active', value: (r) => active(f(r).active) }
 		],
 		search: [
 			{ key: 'family', param: 'family', label: 'Family name', kind: 'text' },
@@ -105,7 +107,7 @@ export const resourceTypes: ResourceType[] = [
 				label: 'Qualification',
 				value: (r) => concept((f(r).qualification as { code?: unknown }[] | undefined)?.[0]?.code)
 			},
-			{ label: 'Active', value: (r) => (f(r).active === false ? 'No' : 'Yes') }
+			{ label: 'Active', value: (r) => active(f(r).active) }
 		],
 		search: [
 			{ key: 'family', param: 'family', label: 'Family name', kind: 'text' },
@@ -121,7 +123,7 @@ export const resourceTypes: ResourceType[] = [
 		columns: [
 			{ label: 'Name', value: (r) => text(f(r).name), sort: 'name' },
 			{ label: 'Type', value: (r) => concept(f(r).type) },
-			{ label: 'Active', value: (r) => (f(r).active === false ? 'No' : 'Yes') }
+			{ label: 'Active', value: (r) => active(f(r).active) }
 		],
 		search: [{ key: 'name', param: 'name', label: 'Name', kind: 'text' }]
 	},
@@ -333,7 +335,7 @@ export const resourceTypes: ResourceType[] = [
 			{ label: 'Report', value: (r) => concept(f(r).code) },
 			{ label: 'Category', value: (r) => concept(f(r).category) },
 			{ label: 'Status', value: (r) => text(f(r).status), sort: 'status' },
-			{ label: 'Issued', value: (r) => date(f(r).issued) }
+			{ label: 'Effective', value: (r) => date(f(r).effectiveDateTime), sort: 'date' }
 		],
 		search: [
 			{ key: 'code', param: 'code', label: 'Code', kind: 'text', placeholder: 'e.g. 24323-8' },
