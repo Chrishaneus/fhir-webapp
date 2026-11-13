@@ -2,9 +2,10 @@
 	import { resolve } from '$app/paths';
 	import Logo from '#lib/components/app/Logo.svelte';
 	import ThemeToggle from '#lib/components/app/ThemeToggle.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import type { LayoutProps } from './$types';
 
-	let { children }: LayoutProps = $props();
+	let { data, children }: LayoutProps = $props();
 </script>
 
 <!-- Pages anyone can see: the landing page and signing in. -->
@@ -14,6 +15,12 @@
 			<a href={resolve('/(public)')} aria-label="Home"><Logo /></a>
 			<div class="ml-auto flex items-center gap-2">
 				<ThemeToggle />
+				{#if data.user}
+					<Button href={resolve('/(app)/dashboard')} size="sm">Open the dashboard</Button>
+				{:else}
+					<Button href={resolve('/(public)/login')} variant="ghost" size="sm">Sign in</Button>
+					<Button href={resolve('/(public)/register')} size="sm">Create an account</Button>
+				{/if}
 			</div>
 		</div>
 	</header>

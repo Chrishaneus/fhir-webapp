@@ -3,8 +3,13 @@
 	import History from '@lucide/svelte/icons/history';
 	import Search from '@lucide/svelte/icons/search';
 	import ShieldCheck from '@lucide/svelte/icons/shield-check';
+	import { resolve } from '$app/paths';
 	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
 
 	const features = [
 		{
@@ -43,6 +48,16 @@
 		A web app for the FHIR REST API: search patients and their records, follow what changed, and
 		work within what your role allows.
 	</p>
+	<div class="flex flex-wrap justify-center gap-3">
+		{#if data.user}
+			<Button href={resolve('/(app)/dashboard')} size="lg">Open the dashboard</Button>
+		{:else}
+			<Button href={resolve('/(public)/login')} size="lg">Sign in</Button>
+			<Button href={resolve('/(public)/register')} size="lg" variant="outline"
+				>Create an account</Button
+			>
+		{/if}
+	</div>
 </section>
 
 <section class="mx-auto grid max-w-6xl gap-4 px-4 pb-20 sm:grid-cols-2 lg:grid-cols-4">
