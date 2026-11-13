@@ -2,6 +2,7 @@ import type { Component } from 'svelte';
 import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
 import UserPlus from '@lucide/svelte/icons/user-plus';
 import { can, type Permission, type SessionUser } from '#lib/auth/roles.js';
+import { resourceTypes } from '#lib/fhir/resources.js';
 
 export interface NavItem {
 	label: string;
@@ -21,6 +22,15 @@ export const navSections: NavSection[] = [
 	{
 		label: 'Overview',
 		items: [{ label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, permission: 'read' }]
+	},
+	{
+		label: 'Records',
+		items: resourceTypes.map((t) => ({
+			label: t.plural,
+			path: `/resources/${t.type}`,
+			icon: t.icon,
+			permission: 'read' as const
+		}))
 	},
 	{
 		label: 'Admin',
