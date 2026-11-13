@@ -87,7 +87,9 @@
 				<meta.icon class="size-4 text-muted-foreground" />
 			</Card.Header>
 			<Card.Content>
-				<p class="text-3xl font-semibold tabular-nums">{total.toLocaleString('en')}</p>
+				<p class="text-3xl font-semibold tabular-nums" data-testid="count-value">
+					{total.toLocaleString('en')}
+				</p>
 			</Card.Content>
 		</Card.Root>
 	{/each}
