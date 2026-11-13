@@ -1,0 +1,41 @@
+# Runs the FHIR API's own docker-compose.yml for the end-to-end tests, alongside (not instead of)
+# a development stack: its own project name, no fixed container names, no host ports but the
+# API's, and settings from here instead of the API repository's .env. Only db, redis and app run
+# (no nginx, which needs TLS certificates).
+#
+#   docker compose -p fhir-webapp-e2e -f ../fhir-rest-api/docker-compose.yml -f e2e/api.compose.yaml up
+#
+# e2e/api.sh does this.
+services:
+  db:
+    container_name: !reset null
+    env_file: !reset []
+    environment:
+      POSTGRES_USER: fhir
+      POSTGRES_PASSWORD: fhir
+      POSTGRES_DB: fhir
+    ports: !reset []
+    volumes: !reset []
+
+  redis:
+    container_name: !reset null
+    ports: !reset []
+
+  app:
+    container_name: !reset null
+    env_file: !reset []
+    environment:
+      DATABASE_URL: postgresql+psycopg://fhir:fhir@db:5432/fhir
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: e2e-only-secret-not-for-anything-else
+      JWT_EXPIRY_MINUTES: '60'
+      CORS_ORIGINS: '*'
+    ports:
+      - '127.0.0.1:${FHIR_E2E_API_PORT:-58000}:8000'
+    restart: !reset no
+
+# The API's file names its network fhir_default; a stack of its own keeps "db" and "redis"
+# pointing at these containers even when a development stack runs too.
+networks:
+  default:
+    name: fhir-webapp-e2e
