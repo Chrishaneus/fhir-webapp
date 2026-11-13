@@ -39,6 +39,8 @@ export function checkAccess(
 	return 'allowed';
 }
 
+export const FORBIDDEN = 'Your role doesn’t allow this page.';
+
 /** Where to go after signing in: only a path on this site, never another site. */
 export function safeRedirect(target: string | null | undefined, fallback = '/dashboard'): string {
 	if (!target || !target.startsWith('/') || target.startsWith('//') || target.startsWith('/\\')) {

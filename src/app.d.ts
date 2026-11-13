@@ -10,6 +10,8 @@ declare global {
 			user: SessionUser | null;
 			/** Their access token for the FHIR API (server only, never sent to the page). */
 			token: string | null;
+			/** The user's role may not open this page (see #lib/auth/access). */
+			forbidden: boolean;
 		}
 		// interface PageData {}
 		// interface PageState {}

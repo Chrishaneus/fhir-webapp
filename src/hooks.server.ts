@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
-import { checkAccess } from '#lib/auth/access.js';
+import { checkAccess, FORBIDDEN } from '#lib/auth/access.js';
 import { clearSession, readToken, SESSION_COOKIE } from '#lib/server/session.js';
 
 /**
@@ -19,8 +19,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 		const back = event.url.pathname + event.url.search;
 		redirect(303, `/login?redirectTo=${encodeURIComponent(back)}`);
 	}
-	if (verdict === 'forbidden') {
-		error(403, 'Your role doesn’t allow this page.');
+	event.locals.forbidden = verdict === 'forbidden';
+	// Anything but viewing a page (a form action, say) stops here. Viewing one goes on, so the
+	// signed-in layout can show the 403 on the app's error page; errors thrown in this hook only
+	// get the bare fallback page.
+	if (
+		verdict === 'forbidden' &&
+		event.request.method !== 'GET' &&
+		event.request.method !== 'HEAD'
+	) {
+		error(403, FORBIDDEN);
 	}
 	return resolve(event);
 };
