@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { parseReference } from '#lib/fhir/format.js';
 import { resourceType } from '#lib/fhir/resources.js';
-import type { Resource } from '#lib/fhir/types.js';
+import type { Bundle, Resource } from '#lib/fhir/types.js';
 import { ApiError, userApi } from '#lib/server/api.js';
 import { displayName } from '#lib/server/search.js';
 import type { PageServerLoad } from './$types';
@@ -31,6 +31,10 @@ export const load: PageServerLoad = async (event) => {
 		}
 	}
 	const names: Record<string, string> = {};
+	// Every version, in full (the history bundle carries them); not worth failing the page over.
+	const history = api<Bundle>(
+		`/${config.type}/${encodeURIComponent(event.params.id)}/_history?_count=50`
+	).catch(() => null);
 	await Promise.all(
 		[...references].map(async (reference) => {
 			try {
@@ -40,5 +44,5 @@ export const load: PageServerLoad = async (event) => {
 			}
 		})
 	);
-	return { type: config.type, resource, names };
+	return { type: config.type, resource, names, history: await history };
 };

@@ -6,7 +6,9 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 	import { formatDate, timeAgo } from '#lib/fhir/format.js';
+	import { versionsOf } from '#lib/fhir/history.js';
 	import { resourceType } from '#lib/fhir/resources.js';
 	import { displayTitle } from '#lib/fhir/title.js';
 	import type { PageProps } from './$types';
@@ -16,6 +18,12 @@
 	const resource = $derived(data.resource);
 	const title = $derived(displayTitle(config, resource));
 	const json = $derived(JSON.stringify(resource, null, 2));
+
+	const versions = $derived(data.history ? versionsOf(data.history) : []);
+	let picked = $state<string | null>(null);
+	/** The version shown under the history: the one picked, else the latest. */
+	const shown = $derived(versions.find((v) => v.versionId === picked) ?? versions[0]);
+	const changeLabels = { created: 'Created', updated: 'Updated', deleted: 'Deleted' } as const;
 </script>
 
 <svelte:head>
@@ -42,6 +50,7 @@
 	<Tabs.List>
 		<Tabs.Trigger value="summary">Summary</Tabs.Trigger>
 		<Tabs.Trigger value="json">FHIR JSON</Tabs.Trigger>
+		<Tabs.Trigger value="history">History ({versions.length})</Tabs.Trigger>
 	</Tabs.List>
 	<Tabs.Content value="summary">
 		<Card.Root>
@@ -78,6 +87,58 @@
 				<pre
 					class="max-h-[32rem] overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-5"
 					data-testid="resource-json">{json}</pre>
+			</Card.Content>
+		</Card.Root>
+	</Tabs.Content>
+	<Tabs.Content value="history">
+		<Card.Root>
+			<Card.Content class="flex flex-col gap-4">
+				{#if !data.history}
+					<p class="text-sm text-muted-foreground">The history couldn’t be loaded.</p>
+				{:else}
+					<Table.Root data-testid="history">
+						<Table.Header>
+							<Table.Row>
+								<Table.Head>Version</Table.Head>
+								<Table.Head>Change</Table.Head>
+								<Table.Head>When</Table.Head>
+								<Table.Head>Fields changed</Table.Head>
+							</Table.Row>
+						</Table.Header>
+						<Table.Body>
+							{#each versions as version (version.versionId)}
+								<Table.Row
+									data-testid="version"
+									data-state={shown?.versionId === version.versionId ? 'selected' : undefined}
+								>
+									<Table.Cell>
+										<button
+											type="button"
+											class="font-medium underline-offset-4 hover:underline"
+											aria-pressed={shown?.versionId === version.versionId}
+											onclick={() => (picked = version.versionId)}>{version.versionId}</button
+										>
+									</Table.Cell>
+									<Table.Cell>{changeLabels[version.change]}</Table.Cell>
+									<Table.Cell class="text-muted-foreground">
+										{formatDate(version.lastUpdated) || '—'}
+									</Table.Cell>
+									<Table.Cell class="text-sm">
+										{version.changed.length ? version.changed.join(', ') : '—'}
+									</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+					{#if shown?.resource}
+						<div class="flex flex-col gap-2">
+							<p class="text-sm font-medium">Version {shown.versionId}</p>
+							<pre
+								class="max-h-[24rem] overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-5"
+								data-testid="version-json">{JSON.stringify(shown.resource, null, 2)}</pre>
+						</div>
+					{/if}
+				{/if}
 			</Card.Content>
 		</Card.Root>
 	</Tabs.Content>
