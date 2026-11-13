@@ -1,5 +1,6 @@
 import type { Component } from 'svelte';
 import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
+import UserPlus from '@lucide/svelte/icons/user-plus';
 import { can, type Permission, type SessionUser } from '#lib/auth/roles.js';
 
 export interface NavItem {
@@ -20,6 +21,10 @@ export const navSections: NavSection[] = [
 	{
 		label: 'Overview',
 		items: [{ label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, permission: 'read' }]
+	},
+	{
+		label: 'Admin',
+		items: [{ label: 'Users', path: '/admin/users', icon: UserPlus, permission: 'manageUsers' }]
 	}
 ];
 
