@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
@@ -71,5 +72,8 @@
 				<Button type="submit" disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</Button>
 			</form>
 		</Card.Content>
+		<Card.Footer class="text-sm text-muted-foreground">
+			No account yet?&nbsp;<a class="underline" href={resolve('/(public)/register')}>Create one</a>
+		</Card.Footer>
 	</Card.Root>
 </div>
