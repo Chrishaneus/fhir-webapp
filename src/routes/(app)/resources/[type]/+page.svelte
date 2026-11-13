@@ -1,5 +1,8 @@
 <script lang="ts">
+	import Plus from '@lucide/svelte/icons/plus';
 	import X from '@lucide/svelte/icons/x';
+	import { can } from '#lib/auth/roles.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Pager from '#lib/components/resources/Pager.svelte';
@@ -36,6 +39,17 @@
 				><X class="size-3" /></a
 			>
 		</Badge>
+	{/if}
+	{#if can(data.user, 'create')}
+		<Button
+			class="ml-auto"
+			href={data.patient
+				? resolve(`/(app)/resources/[type]/new?patient=${encodeURIComponent(data.patient.id)}`, {
+						type: config.type
+					})
+				: resolve('/(app)/resources/[type]/new', { type: config.type })}
+			><Plus />New {config.label.toLowerCase()}</Button
+		>
 	{/if}
 </div>
 
