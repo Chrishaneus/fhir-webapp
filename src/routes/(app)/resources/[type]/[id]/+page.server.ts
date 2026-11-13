@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { parseReference } from '#lib/fhir/format.js';
-import { resourceType } from '#lib/fhir/resources.js';
+import { resourceType, resourceTypes } from '#lib/fhir/resources.js';
 import type { Bundle, Resource } from '#lib/fhir/types.js';
 import { ApiError, userApi } from '#lib/server/api.js';
 import { displayName } from '#lib/server/search.js';
@@ -44,5 +44,22 @@ export const load: PageServerLoad = async (event) => {
 			}
 		})
 	);
-	return { type: config.type, resource, names, history: await history };
+	// A patient's records: how many of each type point at them.
+	const records =
+		config.type === 'Patient'
+			? await Promise.all(
+					resourceTypes
+						.filter((t) => t.patientParam)
+						.map(async (t) => ({
+							type: t.type,
+							total: await api<Bundle>(
+								`/${t.type}?${t.patientParam}=Patient/${encodeURIComponent(resource.id ?? '')}&_summary=count`
+							).then(
+								(b) => b.total ?? 0,
+								() => null
+							)
+						}))
+				)
+			: null;
+	return { type: config.type, resource, names, history: await history, records };
 };

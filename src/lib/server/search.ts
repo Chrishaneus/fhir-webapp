@@ -30,6 +30,12 @@ export function filtersOf(config: ResourceType, url: URL): Record<string, string
 	return filters;
 }
 
+/** A patient whose records a list is limited to (`?patient=<id>`), for types that have one. */
+export function patientOf(config: ResourceType, url: URL): string | undefined {
+	const id = url.searchParams.get('patient')?.trim();
+	return config.patientParam && id && /^[A-Za-z0-9\-.]{1,64}$/.test(id) ? id : undefined;
+}
+
 /**
  * The API query for one page of a resource list: the filters (with a date field's prefix, such
  * as `ge` for "from"), the sort or the type's default, the page, and what to include.
@@ -41,6 +47,8 @@ export function listQuery(config: ResourceType, url: URL): URLSearchParams {
 		const value = filters[field.key];
 		if (value) query.append(field.param, `${field.prefix ?? ''}${value}`);
 	}
+	const patient = patientOf(config, url);
+	if (patient) query.set(config.patientParam!, `Patient/${patient}`);
 	const sort = sortOf(config, url) ?? config.defaultSort;
 	if (sort) query.set('_sort', sort);
 	query.set('_count', String(PAGE_SIZE));

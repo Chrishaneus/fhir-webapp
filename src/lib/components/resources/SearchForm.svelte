@@ -15,9 +15,19 @@
 	let {
 		fields,
 		values,
-		sort
-	}: { fields: SearchField[]; values: Record<string, string>; sort: string | null } = $props();
+		sort,
+		fixed = {}
+	}: {
+		fields: SearchField[];
+		values: Record<string, string>;
+		sort: string | null;
+		/** Parameters that stay whatever the search, e.g. the patient a list is limited to. */
+		fixed?: Record<string, string>;
+	} = $props();
 	const active = $derived(Object.keys(values).length > 0);
+	const clearHref = $derived(
+		`${page.url.pathname}${Object.keys(fixed).length ? `?${new URLSearchParams(fixed)}` : ''}`
+	);
 
 	/**
 	 * Go to the filtered address, leaving out empty fields. Without JavaScript the form submits
@@ -66,9 +76,12 @@
 		</div>
 	{/each}
 	{#if sort}<input type="hidden" name="sort" value={sort} />{/if}
+	{#each Object.entries(fixed) as [name, value] (name)}
+		<input type="hidden" {name} {value} />
+	{/each}
 	<Button type="submit"><Search />Search</Button>
 	{#if active}
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- this page, no filters -->
-		<Button variant="ghost" href={page.url.pathname}>Clear</Button>
+		<Button variant="ghost" href={clearHref}>Clear</Button>
 	{/if}
 </form>

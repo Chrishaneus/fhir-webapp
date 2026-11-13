@@ -49,6 +49,9 @@
 <Tabs.Root value="summary">
 	<Tabs.List>
 		<Tabs.Trigger value="summary">Summary</Tabs.Trigger>
+		{#if data.records}
+			<Tabs.Trigger value="records">Records</Tabs.Trigger>
+		{/if}
 		<Tabs.Trigger value="json">FHIR JSON</Tabs.Trigger>
 		<Tabs.Trigger value="history">History ({versions.length})</Tabs.Trigger>
 	</Tabs.List>
@@ -81,6 +84,31 @@
 			</Card.Content>
 		</Card.Root>
 	</Tabs.Content>
+	{#if data.records}
+		<Tabs.Content value="records">
+			<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="records">
+				{#each data.records as record (record.type)}
+					{@const recordType = resourceType(record.type)!}
+					<a
+						href={resolve(
+							`/(app)/resources/[type]?patient=${encodeURIComponent(resource.id ?? '')}`,
+							{
+								type: record.type
+							}
+						)}
+						class="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+						data-testid="record-count"
+						data-type={record.type}
+					>
+						<div class="flex items-center justify-between text-sm text-muted-foreground">
+							{recordType.plural}<recordType.icon class="size-4" />
+						</div>
+						<p class="mt-2 text-2xl font-semibold tabular-nums">{record.total ?? '—'}</p>
+					</a>
+				{/each}
+			</div>
+		</Tabs.Content>
+	{/if}
 	<Tabs.Content value="json">
 		<Card.Root>
 			<Card.Content>
