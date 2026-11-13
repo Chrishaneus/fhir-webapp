@@ -67,6 +67,17 @@ Sign in as that admin, then add other users under **Admin → Users**, and recor
 **Records**. For a lot of synthetic data, run the API's seeder (`python -m scripts.seed`, see
 its README) against a database it can reach.
 
+### In Docker
+
+The image builds the app and runs it with `node build` (`FHIR_API_URL`, `ORIGIN` and `PORT` set
+it up). To run it with the API, put this repository and `fhir-rest-api` side by side with a
+`docker-compose.yml` that builds both, like the one in the folder that holds them:
+`docker compose up -d --build` starts Postgres, Redis, the API on `localhost:8000` and the app on
+`localhost:3000`.
+
+The session cookie is `Secure` in production builds. Browsers accept that over plain HTTP on
+`localhost` only, so anywhere else, serve the app over HTTPS.
+
 ## Checks and tests
 
 ```sh
