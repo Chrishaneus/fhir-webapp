@@ -17,8 +17,8 @@
 		const params = new URLSearchParams(current.url.search);
 		if (target === 1) params.delete('page');
 		else params.set('page', String(target));
-		const query = params.toString();
-		return `${current.url.pathname}${query ? `?${query}` : ''}`;
+		// Always with "?": even page 1 of this list is then a link of its own, never an empty one.
+		return `${current.url.pathname}?${params}`;
 	}
 </script>
 

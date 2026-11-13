@@ -25,9 +25,8 @@
 		fixed?: Record<string, string>;
 	} = $props();
 	const active = $derived(Object.keys(values).length > 0);
-	const clearHref = $derived(
-		`${page.url.pathname}${Object.keys(fixed).length ? `?${new URLSearchParams(fixed)}` : ''}`
-	);
+	// Always with "?", so it's a link even where the path is empty.
+	const clearHref = $derived(`${page.url.pathname}?${new URLSearchParams(fixed)}`);
 
 	/**
 	 * Go to the filtered address, leaving out empty fields. Without JavaScript the form submits
