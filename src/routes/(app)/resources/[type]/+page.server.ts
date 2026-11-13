@@ -2,7 +2,14 @@ import { error } from '@sveltejs/kit';
 import { resourceType } from '#lib/fhir/resources.js';
 import type { Bundle } from '#lib/fhir/types.js';
 import { ApiError, userApi } from '#lib/server/api.js';
-import { listQuery, pageOf, PAGE_SIZE, splitBundle } from '#lib/server/search.js';
+import {
+	filtersOf,
+	listQuery,
+	pageOf,
+	PAGE_SIZE,
+	sortOf,
+	splitBundle
+} from '#lib/server/search.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -18,7 +25,9 @@ export const load: PageServerLoad = async (event) => {
 			names,
 			total: bundle.total ?? rows.length,
 			page: pageOf(event.url),
-			pageSize: PAGE_SIZE
+			pageSize: PAGE_SIZE,
+			filters: filtersOf(config, event.url),
+			sort: sortOf(config, event.url) ?? config.defaultSort ?? null
 		};
 	} catch (e) {
 		if (e instanceof ApiError) error(e.status >= 500 ? 503 : e.status, e.message);

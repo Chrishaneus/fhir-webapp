@@ -11,12 +11,40 @@ export function pageOf(url: URL): number {
 	return Number.isInteger(page) && page > 1 ? page : 1;
 }
 
-/** The API query for one page of a resource list. */
+/** The sort in an address (`?sort=-date`), if it's one of the type's sortable columns. */
+export function sortOf(config: ResourceType, url: URL): string | undefined {
+	const sort = url.searchParams.get('sort');
+	const allowed = config.columns.flatMap((c) => (c.sort ? [c.sort, `-${c.sort}`] : []));
+	return sort && allowed.includes(sort) ? sort : undefined;
+}
+
+/** The filters in an address, by search field key; empty values are left out. */
+export function filtersOf(config: ResourceType, url: URL): Record<string, string> {
+	const filters: Record<string, string> = {};
+	for (const field of config.search) {
+		const value = url.searchParams.get(field.key)?.trim();
+		if (value && (field.kind !== 'select' || field.options?.includes(value))) {
+			filters[field.key] = value;
+		}
+	}
+	return filters;
+}
+
+/**
+ * The API query for one page of a resource list: the filters (with a date field's prefix, such
+ * as `ge` for "from"), the sort or the type's default, the page, and what to include.
+ */
 export function listQuery(config: ResourceType, url: URL): URLSearchParams {
 	const query = new URLSearchParams();
+	const filters = filtersOf(config, url);
+	for (const field of config.search) {
+		const value = filters[field.key];
+		if (value) query.append(field.param, `${field.prefix ?? ''}${value}`);
+	}
+	const sort = sortOf(config, url) ?? config.defaultSort;
+	if (sort) query.set('_sort', sort);
 	query.set('_count', String(PAGE_SIZE));
 	query.set('_offset', String((pageOf(url) - 1) * PAGE_SIZE));
-	if (config.defaultSort) query.set('_sort', config.defaultSort);
 	for (const include of config.include ?? []) query.append('_include', include);
 	return query;
 }
