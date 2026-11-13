@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Pager from '#lib/components/resources/Pager.svelte';
+	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import ResourceTable from '#lib/components/resources/ResourceTable.svelte';
 	import SearchForm from '#lib/components/resources/SearchForm.svelte';
@@ -37,6 +38,12 @@
 		</Badge>
 	{/if}
 </div>
+
+{#if data.deleted}
+	<Alert.Root data-testid="deleted">
+		<Alert.Title>{config.label} {data.deleted} was deleted</Alert.Title>
+	</Alert.Root>
+{/if}
 
 <Card.Root>
 	<Card.Content class="flex flex-col gap-4">

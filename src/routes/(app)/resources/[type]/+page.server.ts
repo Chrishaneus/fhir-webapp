@@ -40,7 +40,8 @@ export const load: PageServerLoad = async (event) => {
 			pageSize: PAGE_SIZE,
 			filters: filtersOf(config, event.url),
 			sort: sortOf(config, event.url) ?? config.defaultSort ?? null,
-			patient
+			patient,
+			deleted: event.url.searchParams.get('deleted')
 		};
 	} catch (e) {
 		if (e instanceof ApiError) error(e.status >= 500 ? 503 : e.status, e.message);

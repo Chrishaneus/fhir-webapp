@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import { enhance } from '$app/forms';
+	import { can } from '#lib/auth/roles.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
 	import CellValue from '#lib/components/resources/CellValue.svelte';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -13,7 +17,8 @@
 	import { displayTitle } from '#lib/fhir/title.js';
 	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
+	let deleting = $state(false);
 	const config = $derived(resourceType(data.type)!);
 	const resource = $derived(data.resource);
 	const title = $derived(displayTitle(config, resource));
@@ -42,7 +47,47 @@
 		<config.icon class="size-6 text-muted-foreground" />
 		<h1 class="text-2xl font-semibold tracking-tight">{title}</h1>
 		<Badge variant="secondary">{config.label}</Badge>
+		<div class="ml-auto flex items-center gap-2">
+			{#if can(data.user, 'delete')}
+				<AlertDialog.Root>
+					<AlertDialog.Trigger>
+						{#snippet child({ props })}
+							<Button variant="outline" {...props}><Trash2 />Delete</Button>
+						{/snippet}
+					</AlertDialog.Trigger>
+					<AlertDialog.Content>
+						<AlertDialog.Header>
+							<AlertDialog.Title>Delete {title}?</AlertDialog.Title>
+							<AlertDialog.Description>
+								It disappears from searches. Its earlier versions stay in its history.
+							</AlertDialog.Description>
+						</AlertDialog.Header>
+						<AlertDialog.Footer>
+							<AlertDialog.Cancel>Keep it</AlertDialog.Cancel>
+							<form
+								method="POST"
+								action="?/delete"
+								use:enhance={() => {
+									deleting = true;
+									return async ({ update }) => {
+										await update();
+										deleting = false;
+									};
+								}}
+							>
+								<Button type="submit" variant="destructive" disabled={deleting}
+									>{deleting ? 'Deleting…' : 'Delete'}</Button
+								>
+							</form>
+						</AlertDialog.Footer>
+					</AlertDialog.Content>
+				</AlertDialog.Root>
+			{/if}
+		</div>
 	</div>
+	{#if form?.deleteError}
+		<p role="alert" class="text-sm text-destructive">Deleting failed: {form.deleteError}</p>
+	{/if}
 	<p class="font-mono text-xs text-muted-foreground">{resource.resourceType}/{resource.id}</p>
 </div>
 

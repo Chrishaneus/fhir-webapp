@@ -1,10 +1,11 @@
-import { error } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
+import { can } from '#lib/auth/roles.js';
 import { parseReference } from '#lib/fhir/format.js';
 import { resourceType, resourceTypes } from '#lib/fhir/resources.js';
 import type { Bundle, Resource } from '#lib/fhir/types.js';
 import { ApiError, userApi } from '#lib/server/api.js';
 import { displayName } from '#lib/server/search.js';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const config = resourceType(event.params.type);
@@ -62,4 +63,22 @@ export const load: PageServerLoad = async (event) => {
 				)
 			: null;
 	return { type: config.type, resource, names, history: await history, records };
+};
+
+export const actions: Actions = {
+	/** Admins only: the page is open to every role, so the action checks for itself. */
+	delete: async (event) => {
+		const config = resourceType(event.params.type);
+		if (!config) error(404, 'Unknown resource type.');
+		if (!can(event.locals.user, 'delete')) error(403, 'Only admins can delete records.');
+		try {
+			await userApi(event)(`/${config.type}/${encodeURIComponent(event.params.id)}`, {
+				method: 'DELETE'
+			});
+		} catch (e) {
+			if (e instanceof ApiError) return fail(e.status, { deleteError: e.message });
+			throw e;
+		}
+		redirect(303, `/resources/${config.type}?deleted=${encodeURIComponent(event.params.id)}`);
+	}
 };
