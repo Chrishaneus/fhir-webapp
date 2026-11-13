@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import { page } from '$app/state';
+	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { enhance } from '$app/forms';
 	import { can } from '#lib/auth/roles.js';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
@@ -48,6 +51,15 @@
 		<h1 class="text-2xl font-semibold tracking-tight">{title}</h1>
 		<Badge variant="secondary">{config.label}</Badge>
 		<div class="ml-auto flex items-center gap-2">
+			{#if can(data.user, 'update')}
+				<Button
+					variant="outline"
+					href={resolve('/(app)/resources/[type]/[id]/edit', {
+						type: config.type,
+						id: resource.id ?? ''
+					})}><Pencil />Edit</Button
+				>
+			{/if}
 			{#if can(data.user, 'delete')}
 				<AlertDialog.Root>
 					<AlertDialog.Trigger>
@@ -85,6 +97,11 @@
 			{/if}
 		</div>
 	</div>
+	{#if page.url.searchParams.has('saved')}
+		<Alert.Root data-testid="saved">
+			<Alert.Title>Saved as version {resource.meta?.versionId}</Alert.Title>
+		</Alert.Root>
+	{/if}
 	{#if form?.deleteError}
 		<p role="alert" class="text-sm text-destructive">Deleting failed: {form.deleteError}</p>
 	{/if}
