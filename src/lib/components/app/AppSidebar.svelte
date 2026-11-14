@@ -16,7 +16,14 @@
 
 <Sidebar.Root collapsible="icon">
 	<Sidebar.Header>
-		<a href={resolve('/(app)/dashboard')} class="px-2 py-1"><Logo /></a>
+		<!-- Collapsed to icons, only the mark fits: hide the name and centre the mark. -->
+		<a
+			href={resolve('/(app)/dashboard')}
+			class="px-2 py-1 transition-[padding] group-data-[collapsible=icon]:px-0.5"
+			aria-label="FHIR Chart"
+		>
+			<Logo labelClass="truncate group-data-[collapsible=icon]:hidden" />
+		</a>
 	</Sidebar.Header>
 	<Sidebar.Content>
 		{#each sections as section (section.label)}
