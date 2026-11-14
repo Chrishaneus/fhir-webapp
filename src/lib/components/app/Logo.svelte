@@ -2,7 +2,7 @@
 	import HeartPulse from '@lucide/svelte/icons/heart-pulse';
 	import { cn } from '#lib/utils.js';
 
-	let { class: className }: { class?: string } = $props();
+	let { class: className, labelClass }: { class?: string; labelClass?: string } = $props();
 </script>
 
 <span class={cn('flex items-center gap-2 font-semibold', className)}>
@@ -11,5 +11,5 @@
 	>
 		<HeartPulse class="size-4" />
 	</span>
-	FHIR Chart
+	<span class={labelClass}>FHIR Chart</span>
 </span>
