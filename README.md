@@ -13,10 +13,16 @@ data.
   under **Admin → Users**.
 - **Dashboard:** counts of the main resource types, patients by gender, the latest encounters and
   the latest changes across the server.
-- **Records:** a page for each of the ten types the API indexes (patients, practitioners,
-  organizations, encounters, observations, conditions, allergies, medication requests,
-  diagnostic reports, procedures), with search fields, sorting and paging. A resource's page has
-  a summary, its FHIR JSON and its version history; a patient's page also has their records.
+- **Records:** a page for each of the 36 types the API indexes and seeds, grouped in the sidebar
+  by kind: people and places (patients, practitioners, practitioner roles, related people,
+  organizations, locations), clinical (encounters, episodes of care, observations, conditions,
+  allergies, procedures, family histories, immunizations, diagnostic reports, specimens, imaging
+  studies), medications (medications and their requests, statements, dispenses and
+  administrations), care plans and orders (care plans, goals, service requests, tasks, nutrition
+  orders), scheduling (appointments, schedules, slots), documents and messages (documents,
+  compositions, communications and their requests), and coverage and billing (coverages,
+  claims). Each has search fields, sorting and paging. A resource's page has a summary, its FHIR
+  JSON and its version history; a patient's page also has their records, by kind.
 - **Changes by role:** clinicians and admins create and edit resources as FHIR JSON, checked by
   the API's `$validate` and saved with `If-Match`, so a newer save by someone else isn't
   overwritten. Admins delete.
@@ -38,8 +44,10 @@ data.
 - The app reads the role from the token without checking its signature (it doesn't know the
   API's secret); the API checks it on every call. So the role only decides what the app shows;
   the API decides what anyone can do.
-- The resource types are described as data in `src/lib/fhir/resources.ts` (columns, search
-  fields, sorting); the list and resource pages are generic over it.
+- The resource types are described as data in `src/lib/fhir/resources.ts` (kind, columns, search
+  fields, sorting); the list and resource pages are generic over it. A type shows only search
+  parameters and sorts the API answers from its index tables for that type, so its lists stay
+  fast.
 
 ## Running it
 

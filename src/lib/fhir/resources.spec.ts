@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resourceType, resourceTypes } from './resources';
+import { resourceGroups, resourceType, resourceTypes } from './resources';
 import { displayTitle } from './title';
 import type { Resource } from './types';
 
@@ -30,6 +30,48 @@ const samples: Record<string, Resource> = {
 		subject: { reference: 'Patient/p1' },
 		requester: { reference: 'Practitioner/d1' },
 		medication: { concept: { coding: [{ display: 'Hydrochlorothiazide' }] } }
+	},
+	Immunization: {
+		resourceType: 'Immunization',
+		id: 'i1',
+		status: 'completed',
+		vaccineCode: { coding: [{ code: '140', display: 'Influenza, seasonal' }] },
+		patient: { reference: 'Patient/p1' },
+		occurrenceDateTime: '2026-03-04'
+	},
+	MedicationAdministration: {
+		resourceType: 'MedicationAdministration',
+		id: 'ma1',
+		status: 'completed',
+		medication: { concept: { coding: [{ display: 'Lisinopril 10 MG' }] } },
+		subject: { reference: 'Patient/p1' },
+		occurenceDateTime: '2026-03-05',
+		dosage: { dose: { value: 10, unit: 'mg' } }
+	},
+	Appointment: {
+		resourceType: 'Appointment',
+		id: 'a1',
+		status: 'booked',
+		description: 'Routine follow-up',
+		start: '2026-06-01',
+		participant: [
+			{ actor: { reference: 'Practitioner/d1' }, status: 'accepted' },
+			{ actor: { reference: 'Patient/p1' }, status: 'accepted' }
+		]
+	},
+	Composition: {
+		resourceType: 'Composition',
+		id: 'c1',
+		status: 'final',
+		title: 'Discharge Summary',
+		subject: [{ reference: 'Patient/p1' }]
+	},
+	Claim: {
+		resourceType: 'Claim',
+		id: 'cl1',
+		status: 'active',
+		patient: { reference: 'Patient/p1' },
+		item: [{ sequence: 1, net: { value: 125.5, currency: 'USD' } }]
 	}
 };
 
@@ -54,6 +96,38 @@ describe('resource types', () => {
 			Medication: 'Hydrochlorothiazide',
 			Prescriber: { reference: { reference: 'Practitioner/d1' } }
 		});
+		expect(cells('Immunization')).toMatchObject({
+			Patient: { reference: { reference: 'Patient/p1' } },
+			Vaccine: 'Influenza, seasonal',
+			Given: 'Mar 4, 2026'
+		});
+		// R5 spells occurenceDateTime with one "r".
+		expect(cells('MedicationAdministration')).toMatchObject({
+			Medication: 'Lisinopril 10 MG',
+			Dose: '10 mg',
+			Given: 'Mar 5, 2026'
+		});
+		// The participant who is a patient, not the first one.
+		expect(cells('Appointment')).toMatchObject({
+			Patient: { reference: { reference: 'Patient/p1' } },
+			Description: 'Routine follow-up'
+		});
+		expect(cells('Composition')).toMatchObject({
+			Patient: { reference: { reference: 'Patient/p1' } },
+			Title: 'Discharge Summary'
+		});
+		expect(cells('Claim')).toMatchObject({ Total: '125.5 USD' });
+	});
+
+	it('belong to a kind of record, and link new ones to a patient', () => {
+		const groups: string[] = resourceGroups.map((g) => g.id);
+		for (const config of resourceTypes) expect(groups, config.type).toContain(config.group);
+		expect(new Set(resourceTypes.map((t) => t.type)).size).toBe(resourceTypes.length);
+		const patient = { reference: 'Patient/p1' };
+		expect(resourceType('AllergyIntolerance')!.forPatient!(patient)).toEqual({ patient });
+		expect(resourceType('Composition')!.forPatient!(patient)).toEqual({ subject: [patient] });
+		expect(resourceType('Coverage')!.forPatient!(patient)).toEqual({ beneficiary: patient });
+		expect(resourceType('Observation')!.forPatient).toBeUndefined();
 	});
 
 	it('cope with resources missing every field', () => {

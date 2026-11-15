@@ -16,7 +16,7 @@
 	import * as Table from '#lib/components/ui/table/index.js';
 	import { formatDate, timeAgo } from '#lib/fhir/format.js';
 	import { versionsOf } from '#lib/fhir/history.js';
-	import { resourceType } from '#lib/fhir/resources.js';
+	import { resourceGroups, resourceType } from '#lib/fhir/resources.js';
 	import { displayTitle } from '#lib/fhir/title.js';
 	import type { PageProps } from './$types';
 
@@ -31,6 +31,15 @@
 	let picked = $state<string | null>(null);
 	/** The version shown under the history: the one picked, else the latest. */
 	const shown = $derived(versions.find((v) => v.versionId === picked) ?? versions[0]);
+	/** A patient's records by kind, leaving out kinds with none of their types. */
+	const recordGroups = $derived(
+		resourceGroups
+			.map((group) => ({
+				...group,
+				records: (data.records ?? []).filter((r) => resourceType(r.type)?.group === group.id)
+			}))
+			.filter((group) => group.records.length > 0)
+	);
 	const changeLabels = { created: 'Created', updated: 'Updated', deleted: 'Deleted' } as const;
 </script>
 
@@ -148,25 +157,32 @@
 	</Tabs.Content>
 	{#if data.records}
 		<Tabs.Content value="records">
-			<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="records">
-				{#each data.records as record (record.type)}
-					{@const recordType = resourceType(record.type)!}
-					<a
-						href={resolve(
-							`/(app)/resources/[type]?patient=${encodeURIComponent(resource.id ?? '')}`,
-							{
-								type: record.type
-							}
-						)}
-						class="rounded-lg border p-4 transition-colors hover:bg-muted/50"
-						data-testid="record-count"
-						data-type={record.type}
-					>
-						<div class="flex items-center justify-between text-sm text-muted-foreground">
-							{recordType.plural}<recordType.icon class="size-4" />
+			<div class="flex flex-col gap-6" data-testid="records">
+				{#each recordGroups as group (group.id)}
+					<section class="flex flex-col gap-3">
+						<h2 class="text-sm font-medium text-muted-foreground">{group.label}</h2>
+						<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+							{#each group.records as record (record.type)}
+								{@const recordType = resourceType(record.type)!}
+								<a
+									href={resolve(
+										`/(app)/resources/[type]?patient=${encodeURIComponent(resource.id ?? '')}`,
+										{
+											type: record.type
+										}
+									)}
+									class="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+									data-testid="record-count"
+									data-type={record.type}
+								>
+									<div class="flex items-center justify-between text-sm text-muted-foreground">
+										{recordType.plural}<recordType.icon class="size-4" />
+									</div>
+									<p class="mt-2 text-2xl font-semibold tabular-nums">{record.total ?? '—'}</p>
+								</a>
+							{/each}
 						</div>
-						<p class="mt-2 text-2xl font-semibold tabular-nums">{record.total ?? '—'}</p>
-					</a>
+					</section>
 				{/each}
 			</div>
 		</Tabs.Content>

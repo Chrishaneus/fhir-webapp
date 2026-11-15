@@ -1,27 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionUser } from '#lib/auth/roles.js';
+import { resourceGroups, resourceTypes } from '#lib/fhir/resources.js';
 import { isActive, navFor } from './navigation';
 
 const as = (role: SessionUser['role']): SessionUser => ({ username: role, role, expiresAt: 0 });
-const labels = (user: SessionUser | null) =>
-	navFor(user).map((s) => `${s.label}: ${s.items.map((i) => i.label).join(', ')}`);
+const sectionLabels = (user: SessionUser | null) => navFor(user).map((s) => s.label);
+const recordSections: string[] = resourceGroups.map((g) => g.label);
 
 describe('navFor', () => {
 	it('shows each role only what it may open', () => {
-		expect(labels(as('viewer')).map((l) => l.split(':')[0])).toEqual(['Overview', 'Records']);
-		expect(labels(as('clinician')).map((l) => l.split(':')[0])).toEqual(['Overview', 'Records']);
-		expect(labels(as('admin')).map((l) => l.split(':')[0])).toEqual([
-			'Overview',
-			'Records',
-			'Admin'
-		]);
+		expect(sectionLabels(as('viewer'))).toEqual(['Overview', ...recordSections]);
+		expect(sectionLabels(as('clinician'))).toEqual(['Overview', ...recordSections]);
+		expect(sectionLabels(as('admin'))).toEqual(['Overview', ...recordSections, 'Admin']);
 		expect(navFor(null)).toEqual([]);
 	});
 
-	it('lists every record type', () => {
-		const records = navFor(as('viewer')).find((s) => s.label === 'Records')!;
-		expect(records.items.map((i) => i.path)).toContain('/resources/Patient');
-		expect(records.items).toHaveLength(10);
+	it('lists every record type once, under its kind', () => {
+		const sections = navFor(as('viewer')).filter((s) => recordSections.includes(s.label));
+		const paths = sections.flatMap((s) => s.items.map((i) => i.path));
+		expect(paths).toHaveLength(resourceTypes.length);
+		expect(new Set(paths).size).toBe(paths.length);
+		expect(
+			sections.find((s) => s.label === 'People and places')!.items.map((i) => i.path)
+		).toContain('/resources/Patient');
+		expect(sections.find((s) => s.label === 'Medications')!.items.map((i) => i.path)).toContain(
+			'/resources/MedicationRequest'
+		);
+		for (const section of sections) expect(section.items.length, section.label).toBeGreaterThan(0);
 	});
 });
 

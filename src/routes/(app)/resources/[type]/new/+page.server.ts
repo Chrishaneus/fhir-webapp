@@ -21,7 +21,53 @@ const templates: Record<string, Record<string, unknown>> = {
 	AllergyIntolerance: { code: { text: '' } },
 	MedicationRequest: { status: 'draft', intent: 'order', medication: { concept: { text: '' } } },
 	DiagnosticReport: { status: 'registered', code: { text: '' } },
-	Procedure: { status: 'preparation', code: { text: '' } }
+	Procedure: { status: 'preparation', code: { text: '' } },
+	PractitionerRole: { code: [{ text: '' }], active: true },
+	RelatedPerson: { name: [{ family: '', given: [''] }], active: true },
+	Location: { name: '', status: 'active' },
+	EpisodeOfCare: { status: 'planned' },
+	FamilyMemberHistory: { status: 'partial', relationship: { text: '' } },
+	Immunization: { status: 'completed', vaccineCode: { text: '' }, occurrenceDateTime: '' },
+	Specimen: { status: 'available', type: { text: '' } },
+	ImagingStudy: { status: 'registered', description: '' },
+	Medication: { status: 'active', code: { text: '' } },
+	MedicationStatement: { status: 'recorded', medication: { concept: { text: '' } } },
+	MedicationDispense: { status: 'preparation', medication: { concept: { text: '' } } },
+	MedicationAdministration: {
+		status: 'in-progress',
+		medication: { concept: { text: '' } },
+		occurenceDateTime: ''
+	},
+	CarePlan: { status: 'draft', intent: 'plan', title: '' },
+	Goal: { lifecycleStatus: 'proposed', description: { text: '' } },
+	ServiceRequest: { status: 'draft', intent: 'order', code: { concept: { text: '' } } },
+	Task: { status: 'draft', intent: 'order', description: '' },
+	NutritionOrder: { status: 'draft', intent: 'order', dateTime: '' },
+	Appointment: {
+		status: 'proposed',
+		description: '',
+		start: '',
+		end: '',
+		participant: [{ actor: { reference: '' }, status: 'needs-action' }]
+	},
+	Schedule: { name: '', actor: [{ reference: '' }], active: true },
+	Slot: { status: 'free', schedule: { reference: '' }, start: '', end: '' },
+	DocumentReference: {
+		status: 'current',
+		type: { text: '' },
+		content: [{ attachment: { contentType: 'text/plain', title: '' } }]
+	},
+	Composition: {
+		status: 'preliminary',
+		type: { text: '' },
+		title: '',
+		date: '',
+		author: [{ reference: '' }]
+	},
+	Communication: { status: 'preparation' },
+	CommunicationRequest: { status: 'draft', intent: 'order' },
+	Coverage: { status: 'draft', kind: 'insurance' },
+	Claim: { status: 'draft', use: 'claim', type: { text: '' }, created: '' }
 };
 
 export const load: PageServerLoad = ({ params, url }) => {
@@ -34,9 +80,8 @@ export const load: PageServerLoad = ({ params, url }) => {
 	};
 	// Opened from a patient's records: the new one is theirs.
 	if (config.patientParam && patient && /^[A-Za-z0-9\-.]{1,64}$/.test(patient)) {
-		resource[config.type === 'AllergyIntolerance' ? 'patient' : 'subject'] = {
-			reference: `Patient/${patient}`
-		};
+		const reference = { reference: `Patient/${patient}` };
+		Object.assign(resource, config.forPatient?.(reference) ?? { subject: reference });
 	}
 	return { type: config.type, json: JSON.stringify(resource, null, 2) };
 };
