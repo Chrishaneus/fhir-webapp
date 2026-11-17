@@ -12,11 +12,12 @@
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
 	import { formatDate, timeAgo } from '#lib/fhir/format.js';
 	import { versionsOf } from '#lib/fhir/history.js';
-	import { resourceType } from '#lib/fhir/resources.js';
+	import { groupByKind, resourceType } from '#lib/fhir/resources.js';
 	import { displayTitle } from '#lib/fhir/title.js';
 	import type { PageProps } from './$types';
 
@@ -148,27 +149,40 @@
 	</Tabs.Content>
 	{#if data.records}
 		<Tabs.Content value="records">
-			<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="records">
-				{#each data.records as record (record.type)}
-					{@const recordType = resourceType(record.type)!}
-					<a
-						href={resolve(
-							`/(app)/resources/[type]?patient=${encodeURIComponent(resource.id ?? '')}`,
-							{
-								type: record.type
-							}
-						)}
-						class="rounded-lg border p-4 transition-colors hover:bg-muted/50"
-						data-testid="record-count"
-						data-type={record.type}
-					>
-						<div class="flex items-center justify-between text-sm text-muted-foreground">
-							{recordType.plural}<recordType.icon class="size-4" />
-						</div>
-						<p class="mt-2 text-2xl font-semibold tabular-nums">{record.total ?? '—'}</p>
-					</a>
-				{/each}
-			</div>
+			{#await data.records}
+				<div class="flex items-center gap-2 text-sm text-muted-foreground">
+					<Spinner aria-label="Counting records" /> Counting records…
+				</div>
+			{:then records}
+				<div class="flex flex-col gap-6" data-testid="records">
+					{#each groupByKind(records) as group (group.id)}
+						<section class="flex flex-col gap-3" data-testid="record-group" data-group={group.id}>
+							<h2 class="text-sm font-medium text-muted-foreground">{group.label}</h2>
+							<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+								{#each group.records as record (record.type)}
+									{@const recordType = resourceType(record.type)!}
+									<a
+										href={resolve(
+											`/(app)/resources/[type]?patient=${encodeURIComponent(resource.id ?? '')}`,
+											{
+												type: record.type
+											}
+										)}
+										class="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+										data-testid="record-count"
+										data-type={record.type}
+									>
+										<div class="flex items-center justify-between text-sm text-muted-foreground">
+											{recordType.plural}<recordType.icon class="size-4" />
+										</div>
+										<p class="mt-2 text-2xl font-semibold tabular-nums">{record.total ?? '—'}</p>
+									</a>
+								{/each}
+							</div>
+						</section>
+					{/each}
+				</div>
+			{/await}
 		</Tabs.Content>
 	{/if}
 	<Tabs.Content value="json">

@@ -45,10 +45,11 @@ export const load: PageServerLoad = async (event) => {
 			}
 		})
 	);
-	// A patient's records: how many of each type point at them.
+	// A patient's records: how many of each type point at them. There's a count per type, so
+	// they're streamed rather than holding up the page; each one that fails shows as unknown.
 	const records =
 		config.type === 'Patient'
-			? await Promise.all(
+			? Promise.all(
 					resourceTypes
 						.filter((t) => t.patientParam)
 						.map(async (t) => ({

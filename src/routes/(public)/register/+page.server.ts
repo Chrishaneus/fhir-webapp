@@ -33,10 +33,11 @@ export const actions: Actions = {
 		if (Object.keys(errors).length > 0) return fail(400, { ...values, errors });
 
 		try {
-			// No role: the API gives new accounts the viewer role; an admin can grant more.
+			// Always the viewer role, which an admin can raise later. Leaving it out isn't enough:
+			// the API's default is clinician.
 			await callApi(fetch, '/auth/register', {
 				method: 'POST',
-				body: { username, password, ...(email ? { email } : {}) }
+				body: { username, password, role: 'viewer', ...(email ? { email } : {}) }
 			});
 		} catch (error) {
 			if (error instanceof ApiError && error.status === 409) {
