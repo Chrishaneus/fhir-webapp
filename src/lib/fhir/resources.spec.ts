@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resourceGroups, resourceType, resourceTypes } from './resources';
+import { groupByKind, resourceGroups, resourceType, resourceTypes } from './resources';
 import { displayTitle } from './title';
 import type { Resource } from './types';
 
@@ -128,6 +128,18 @@ describe('resource types', () => {
 		expect(resourceType('Composition')!.forPatient!(patient)).toEqual({ subject: [patient] });
 		expect(resourceType('Coverage')!.forPatient!(patient)).toEqual({ beneficiary: patient });
 		expect(resourceType('Observation')!.forPatient).toBeUndefined();
+	});
+
+	it('group records by kind, in order, leaving out empty kinds', () => {
+		const groups = groupByKind([
+			{ type: 'Coverage', total: 1 },
+			{ type: 'Observation', total: 3 },
+			{ type: 'Bundle', total: 9 },
+			{ type: 'Condition', total: 0 }
+		]);
+		expect(groups.map((g) => g.id)).toEqual(['clinical', 'billing']);
+		expect(groups[0].records.map((r) => r.type)).toEqual(['Observation', 'Condition']);
+		expect(groupByKind([])).toEqual([]);
 	});
 
 	it('cope with resources missing every field', () => {

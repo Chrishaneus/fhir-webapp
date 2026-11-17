@@ -1,11 +1,13 @@
 import type { Component } from 'svelte';
 import Activity from '@lucide/svelte/icons/activity';
+import Building2 from '@lucide/svelte/icons/building-2';
 import CalendarCheck from '@lucide/svelte/icons/calendar-check';
 import CalendarClock from '@lucide/svelte/icons/calendar-clock';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import ClipboardCheck from '@lucide/svelte/icons/clipboard-check';
 import ClipboardList from '@lucide/svelte/icons/clipboard-list';
 import FileStack from '@lucide/svelte/icons/file-stack';
+import FileText from '@lucide/svelte/icons/file-text';
 import FolderHeart from '@lucide/svelte/icons/folder-heart';
 import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
 import IdCard from '@lucide/svelte/icons/id-card';
@@ -14,27 +16,25 @@ import MapPin from '@lucide/svelte/icons/map-pin';
 import MessageSquare from '@lucide/svelte/icons/message-square';
 import MessageSquarePlus from '@lucide/svelte/icons/message-square-plus';
 import NotebookText from '@lucide/svelte/icons/notebook-text';
+import Pill from '@lucide/svelte/icons/pill';
 import PillBottle from '@lucide/svelte/icons/pill-bottle';
 import Receipt from '@lucide/svelte/icons/receipt';
 import ScanLine from '@lucide/svelte/icons/scan-line';
+import Scissors from '@lucide/svelte/icons/scissors';
 import Send from '@lucide/svelte/icons/send';
+import ShieldAlert from '@lucide/svelte/icons/shield-alert';
 import ShieldCheck from '@lucide/svelte/icons/shield-check';
 import ShieldPlus from '@lucide/svelte/icons/shield-plus';
+import Stethoscope from '@lucide/svelte/icons/stethoscope';
 import Syringe from '@lucide/svelte/icons/syringe';
 import Tablets from '@lucide/svelte/icons/tablets';
 import Target from '@lucide/svelte/icons/target';
 import TestTube from '@lucide/svelte/icons/test-tube';
-import Utensils from '@lucide/svelte/icons/utensils';
-import UsersRound from '@lucide/svelte/icons/users-round';
-import Building2 from '@lucide/svelte/icons/building-2';
-import FileText from '@lucide/svelte/icons/file-text';
-import Pill from '@lucide/svelte/icons/pill';
-import Scissors from '@lucide/svelte/icons/scissors';
-import ShieldAlert from '@lucide/svelte/icons/shield-alert';
-import Stethoscope from '@lucide/svelte/icons/stethoscope';
 import Thermometer from '@lucide/svelte/icons/thermometer';
 import UserRound from '@lucide/svelte/icons/user-round';
 import Users from '@lucide/svelte/icons/users';
+import UsersRound from '@lucide/svelte/icons/users-round';
+import Utensils from '@lucide/svelte/icons/utensils';
 import {
 	ageFrom,
 	formatConcept,
@@ -148,6 +148,7 @@ const appointmentPatient = (r: Resource): Cell => {
 };
 
 export const resourceTypes: ResourceType[] = [
+	// People and places
 	{
 		type: 'Patient',
 		group: 'people',
@@ -212,6 +213,63 @@ export const resourceTypes: ResourceType[] = [
 		],
 		search: [{ key: 'name', param: 'name', label: 'Name', kind: 'text' }]
 	},
+	{
+		type: 'PractitionerRole',
+		group: 'people',
+		label: 'Practitioner role',
+		plural: 'Practitioner roles',
+		icon: IdCard,
+		include: ['PractitionerRole:practitioner', 'PractitionerRole:organization'],
+		columns: [
+			{ label: 'Role', value: (r) => concept(first(f(r).code)) },
+			{ label: 'Practitioner', value: (r) => ref(f(r).practitioner) },
+			{ label: 'Organization', value: (r) => ref(f(r).organization) },
+			{ label: 'Active', value: (r) => active(f(r).active) }
+		],
+		search: [
+			{ key: 'role', param: 'role', label: 'Role code', kind: 'text', placeholder: 'e.g. doctor' },
+			activeField
+		]
+	},
+	{
+		type: 'RelatedPerson',
+		group: 'people',
+		label: 'Related person',
+		plural: 'Related people',
+		icon: HeartHandshake,
+		defaultSort: 'name',
+		include: ['RelatedPerson:patient'],
+		patientParam: 'patient',
+		forPatient: (patient) => ({ patient }),
+		columns: [
+			{ label: 'Name', value: (r) => formatName(f(r).name as HumanName[]), sort: 'name' },
+			{ label: 'Patient', value: (r) => ref(f(r).patient) },
+			{ label: 'Relationship', value: (r) => concept(f(r).relationship) },
+			{ label: 'Active', value: (r) => active(f(r).active) }
+		],
+		search: [{ key: 'name', param: 'name', label: 'Name', kind: 'text' }]
+	},
+	{
+		type: 'Location',
+		group: 'people',
+		label: 'Location',
+		plural: 'Locations',
+		icon: MapPin,
+		defaultSort: 'name',
+		include: ['Location:managingOrganization'],
+		columns: [
+			{ label: 'Name', value: (r) => text(f(r).name), sort: 'name' },
+			{ label: 'Type', value: (r) => concept(f(r).type) },
+			{ label: 'Organization', value: (r) => ref(f(r).managingOrganization) },
+			{ label: 'Status', value: (r) => text(f(r).status), sort: 'status' }
+		],
+		search: [
+			{ key: 'name', param: 'name', label: 'Name', kind: 'text' },
+			status(['active', 'suspended', 'inactive'])
+		]
+	},
+
+	// Clinical
 	{
 		type: 'Encounter',
 		group: 'clinical',
@@ -358,62 +416,6 @@ export const resourceTypes: ResourceType[] = [
 		]
 	},
 	{
-		type: 'MedicationRequest',
-		group: 'medications',
-		label: 'Medication request',
-		plural: 'Medication requests',
-		icon: Pill,
-		defaultSort: '-authoredon',
-		include: ['MedicationRequest:subject'],
-		patientParam: 'patient',
-		columns: [
-			{ label: 'Patient', value: (r) => ref(f(r).subject) },
-			{
-				label: 'Medication',
-				value: (r) => concept((f(r).medication as { concept?: unknown } | undefined)?.concept)
-			},
-			{ label: 'Status', value: (r) => text(f(r).status), sort: 'status' },
-			{ label: 'Intent', value: (r) => text(f(r).intent) },
-			{ label: 'Prescriber', value: (r) => ref(f(r).requester) },
-			{ label: 'Authored', value: (r) => date(f(r).authoredOn), sort: 'authoredon' }
-		],
-		search: [
-			{
-				key: 'status',
-				param: 'status',
-				label: 'Status',
-				kind: 'select',
-				options: [
-					'active',
-					'on-hold',
-					'ended',
-					'stopped',
-					'completed',
-					'cancelled',
-					'entered-in-error',
-					'draft',
-					'unknown'
-				]
-			},
-			{
-				key: 'intent',
-				param: 'intent',
-				label: 'Intent',
-				kind: 'select',
-				options: [
-					'proposal',
-					'plan',
-					'order',
-					'original-order',
-					'reflex-order',
-					'filler-order',
-					'instance-order',
-					'option'
-				]
-			}
-		]
-	},
-	{
 		type: 'DiagnosticReport',
 		group: 'clinical',
 		label: 'Diagnostic report',
@@ -484,65 +486,6 @@ export const resourceTypes: ResourceType[] = [
 			}
 		]
 	},
-
-	// People and places
-	{
-		type: 'PractitionerRole',
-		group: 'people',
-		label: 'Practitioner role',
-		plural: 'Practitioner roles',
-		icon: IdCard,
-		include: ['PractitionerRole:practitioner', 'PractitionerRole:organization'],
-		columns: [
-			{ label: 'Role', value: (r) => concept(first(f(r).code)) },
-			{ label: 'Practitioner', value: (r) => ref(f(r).practitioner) },
-			{ label: 'Organization', value: (r) => ref(f(r).organization) },
-			{ label: 'Active', value: (r) => active(f(r).active) }
-		],
-		search: [
-			{ key: 'role', param: 'role', label: 'Role code', kind: 'text', placeholder: 'e.g. doctor' },
-			activeField
-		]
-	},
-	{
-		type: 'RelatedPerson',
-		group: 'people',
-		label: 'Related person',
-		plural: 'Related people',
-		icon: HeartHandshake,
-		defaultSort: 'name',
-		include: ['RelatedPerson:patient'],
-		patientParam: 'patient',
-		forPatient: (patient) => ({ patient }),
-		columns: [
-			{ label: 'Name', value: (r) => formatName(f(r).name as HumanName[]), sort: 'name' },
-			{ label: 'Patient', value: (r) => ref(f(r).patient) },
-			{ label: 'Relationship', value: (r) => concept(f(r).relationship) },
-			{ label: 'Active', value: (r) => active(f(r).active) }
-		],
-		search: [{ key: 'name', param: 'name', label: 'Family name', kind: 'text' }]
-	},
-	{
-		type: 'Location',
-		group: 'people',
-		label: 'Location',
-		plural: 'Locations',
-		icon: MapPin,
-		defaultSort: 'name',
-		include: ['Location:managingOrganization'],
-		columns: [
-			{ label: 'Name', value: (r) => text(f(r).name), sort: 'name' },
-			{ label: 'Type', value: (r) => concept(f(r).type) },
-			{ label: 'Organization', value: (r) => ref(f(r).managingOrganization) },
-			{ label: 'Status', value: (r) => text(f(r).status), sort: 'status' }
-		],
-		search: [
-			{ key: 'name', param: 'name', label: 'Name', kind: 'text' },
-			status(['active', 'suspended', 'inactive'])
-		]
-	},
-
-	// Clinical
 	{
 		type: 'EpisodeOfCare',
 		group: 'clinical',
@@ -699,6 +642,59 @@ export const resourceTypes: ResourceType[] = [
 	},
 
 	// Medications
+	{
+		type: 'MedicationRequest',
+		group: 'medications',
+		label: 'Medication request',
+		plural: 'Medication requests',
+		icon: Pill,
+		defaultSort: '-authoredon',
+		include: ['MedicationRequest:subject'],
+		patientParam: 'patient',
+		columns: [
+			{ label: 'Patient', value: (r) => ref(f(r).subject) },
+			{ label: 'Medication', value: (r) => conceptOf(f(r).medication) },
+			{ label: 'Status', value: (r) => text(f(r).status), sort: 'status' },
+			{ label: 'Intent', value: (r) => text(f(r).intent) },
+			{ label: 'Prescriber', value: (r) => ref(f(r).requester) },
+			{ label: 'Authored', value: (r) => date(f(r).authoredOn), sort: 'authoredon' }
+		],
+		search: [
+			{
+				key: 'status',
+				param: 'status',
+				label: 'Status',
+				kind: 'select',
+				options: [
+					'active',
+					'on-hold',
+					'ended',
+					'stopped',
+					'completed',
+					'cancelled',
+					'entered-in-error',
+					'draft',
+					'unknown'
+				]
+			},
+			{
+				key: 'intent',
+				param: 'intent',
+				label: 'Intent',
+				kind: 'select',
+				options: [
+					'proposal',
+					'plan',
+					'order',
+					'original-order',
+					'reflex-order',
+					'filler-order',
+					'instance-order',
+					'option'
+				]
+			}
+		]
+	},
 	{
 		type: 'Medication',
 		group: 'medications',
@@ -1185,3 +1181,12 @@ const byType = new Map(resourceTypes.map((t) => [t.type, t]));
 
 /** The configuration for a resource type, or undefined when the app doesn't show it. */
 export const resourceType = (type: string) => byType.get(type);
+
+/** Records by kind, in the app's order, leaving out kinds with none of them. */
+export const groupByKind = <T extends { type: string }>(records: T[]) =>
+	resourceGroups
+		.map((group) => ({
+			...group,
+			records: records.filter((r) => resourceType(r.type)?.group === group.id)
+		}))
+		.filter((group) => group.records.length > 0);

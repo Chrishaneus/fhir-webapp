@@ -56,8 +56,20 @@ test('a patient’s page shows their records, and the list of them', async ({ pa
 	await expect(page.getByTestId('summary')).toContainText('Apr 12, 1985');
 
 	await page.getByRole('tab', { name: 'Records' }).click();
-	const observations = page.locator('[data-testid=record-count][data-type=Observation]');
+	// Grouped by kind, each under its heading.
+	const groups = page.getByTestId('record-group');
+	await expect(groups.first()).toBeVisible();
+	for (const group of await groups.all()) {
+		await expect(group.getByRole('heading', { level: 2 })).toBeVisible();
+		await expect(group.getByTestId('record-count').first()).toBeVisible();
+	}
+	const clinical = page.locator('[data-testid=record-group][data-group=clinical]');
+	await expect(clinical.getByRole('heading')).toHaveText('Clinical');
+	const observations = clinical.locator('[data-testid=record-count][data-type=Observation]');
 	await expect(observations).toContainText(String(heartRates.length));
+	await expect(
+		page.locator('[data-testid=record-group][data-group=medications] [data-type=Observation]')
+	).toHaveCount(0);
 	await observations.click();
 	await expect(page).toHaveURL(/\/resources\/Observation\?patient=e2e-ada$/);
 	await expect(page.getByTestId('patient-filter')).toContainText('Ada Quillfeather');
